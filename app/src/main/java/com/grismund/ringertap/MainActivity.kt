@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
             RingerTapTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-                        name = "Android",
+                        name = "Seth",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -36,12 +36,12 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         text = "Hello $name!",
         modifier = modifier
     )
-}
+} 
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     RingerTapTheme {
-        Greeting("Android")
+        Greeting("Seth")
     }
 }
