@@ -1,0 +1,32 @@
+# IntelliJ / Android Studio
+*.iml
+.idea/
+!.idea/codeStyles  # (optional: keep shared code style settings)
+.DS_Store
+
+# Gradle
+.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local configuration
+local.properties
+
+# Android specific
+captures/
+.externalNativeBuild/
+.cxx/
+outputs/
+generated/
+
+# Log files
+*.log
+
+# Keystore files (don’t commit signing keys)
+*.keystore
+*.jks
+
+# Misc
+bin/
+gen/
