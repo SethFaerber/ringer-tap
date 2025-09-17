@@ -1,0 +1,124 @@
+package com.grismund.ringertap.widget
+
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProvider
+import android.content.Context
+import android.content.Intent
+import android.media.AudioManager
+import android.widget.RemoteViews
+import com.grismund.ringertap.R
+
+class RingerWidgetProvider : AppWidgetProvider() {
+
+    companion object {
+        const val ACTION_TOGGLE_RINGER = "com.grismund.ringertap.TOGGLE_RINGER"
+        private const val PREFS_NAME = "RingerWidgetPrefs"
+        private const val PREF_CURRENT_MODE = "current_mode"
+    }
+
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
+        // Update all widget instances
+        for (appWidgetId in appWidgetIds) {
+            updateAppWidget(context, appWidgetManager, appWidgetId)
+        }
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+
+        if (ACTION_TOGGLE_RINGER == intent.action) {
+            toggleRingerMode(context)
+
+            // Update all widgets
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(
+                android.content.ComponentName(context, RingerWidgetProvider::class.java)
+            )
+            onUpdate(context, appWidgetManager, appWidgetIds)
+        }
+    }
+
+    private fun updateAppWidget(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int
+    ) {
+        val views = RemoteViews(context.packageName, R.layout.ringer_widget)
+
+        // Get current ringer mode
+        val currentMode = getCurrentRingerMode(context)
+
+        // Update icon and text based on current mode
+        when (currentMode) {
+            AudioManager.RINGER_MODE_NORMAL -> {
+                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_ringer_normal)
+                views.setTextViewText(R.id.widget_text, context.getString(R.string.ringer_normal))
+            }
+            AudioManager.RINGER_MODE_VIBRATE -> {
+                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_ringer_vibrate)
+                views.setTextViewText(R.id.widget_text, context.getString(R.string.ringer_vibrate))
+            }
+            AudioManager.RINGER_MODE_SILENT -> {
+                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_ringer_silent)
+                views.setTextViewText(R.id.widget_text, context.getString(R.string.ringer_silent))
+            }
+        }
+
+        // Set up click listener on the entire widget
+        val intent = Intent(context, RingerWidgetProvider::class.java)
+        intent.action = ACTION_TOGGLE_RINGER
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+
+        // Update the widget
+        appWidgetManager.updateAppWidget(appWidgetId, views)
+    }
+
+    private fun getCurrentRingerMode(context: Context): Int {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        return audioManager.ringerMode
+    }
+
+    private fun toggleRingerMode(context: Context) {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val currentMode = audioManager.ringerMode
+
+        val nextMode = when (currentMode) {
+            AudioManager.RINGER_MODE_NORMAL -> AudioManager.RINGER_MODE_VIBRATE
+            AudioManager.RINGER_MODE_VIBRATE -> AudioManager.RINGER_MODE_SILENT
+            AudioManager.RINGER_MODE_SILENT -> AudioManager.RINGER_MODE_NORMAL
+            else -> AudioManager.RINGER_MODE_NORMAL
+        }
+
+        // Check if we can set the ringer mode
+        if (canChangeRingerMode(context, nextMode)) {
+            audioManager.ringerMode = nextMode
+            saveCurrentMode(context, nextMode)
+        }
+    }
+
+    private fun canChangeRingerMode(context: Context, mode: Int): Boolean {
+        // For silent mode on Android 6+, we need Do Not Disturb permission
+        if (mode == AudioManager.RINGER_MODE_SILENT &&
+            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE)
+                as android.app.NotificationManager
+            return notificationManager.isNotificationPolicyAccessGranted
+        }
+
+        return true
+    }
+
+    private fun saveCurrentMode(context: Context, mode: Int) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putInt(PREF_CURRENT_MODE, mode).apply()
+    }
+}

@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">RingerTap</string>
+
+    <!-- Widget strings -->
+    <string name="widget_description">Ringer Control Widget</string>
+    <string name="ringer_normal">Normal</string>
+    <string name="ringer_vibrate">Vibrate</string>
+    <string name="ringer_silent">Silent</string>
+    <string name="permission_required">Permission Required</string>
+    <string name="dnd_permission_message">Please grant Do Not Disturb access in Settings to control silent mode</string>
 </resources>
