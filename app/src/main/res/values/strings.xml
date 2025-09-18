@@ -8,4 +8,6 @@
     <string name="ringer_silent">Silent</string>
     <string name="permission_required">Permission Required</string>
     <string name="dnd_permission_message">Please grant Do Not Disturb access in Settings to control silent mode</string>
+    <string name="shortcut_long_label">Open Ringer Control Widget</string>
+    <string name="shortcut_short_label">Ringer Control</string>
 </resources>

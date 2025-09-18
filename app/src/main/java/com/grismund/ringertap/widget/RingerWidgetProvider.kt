@@ -8,6 +8,7 @@ import android.content.Intent
 import android.media.AudioManager
 import android.widget.RemoteViews
 import com.grismund.ringertap.R
+import androidx.core.content.edit
 
 class RingerWidgetProvider : AppWidgetProvider() {
 
@@ -31,7 +32,18 @@ class RingerWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
 
-        if (ACTION_TOGGLE_RINGER == intent.action) {
+        if (intent.action == AudioManager.RINGER_MODE_CHANGED_ACTION) {
+            // Update all widgets when the ringer mode changes
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(
+                android.content.ComponentName(context, RingerWidgetProvider::class.java)
+            )
+
+            // Force update of all widgets
+            for (appWidgetId in appWidgetIds) {
+                updateAppWidget(context, appWidgetManager, appWidgetId)
+            }
+        } else if (ACTION_TOGGLE_RINGER == intent.action) {
             toggleRingerMode(context)
 
             // Update all widgets
@@ -102,13 +114,39 @@ class RingerWidgetProvider : AppWidgetProvider() {
         if (canChangeRingerMode(context, nextMode)) {
             audioManager.ringerMode = nextMode
             saveCurrentMode(context, nextMode)
+
+            // Trigger vibration or sound based on the mode
+            when (nextMode) {
+                AudioManager.RINGER_MODE_VIBRATE -> vibrate(context)
+                AudioManager.RINGER_MODE_NORMAL -> playSound(context)
+            }
         }
+    }
+
+    private fun vibrate(context: Context) {
+        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator
+        if (vibrator != null && vibrator.hasVibrator()) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                val vibrationEffect = android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_TICK)
+                vibrator.vibrate(vibrationEffect)
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(android.os.VibrationEffect.createOneShot(200, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                vibrator.vibrate(200) // Fallback for older devices
+            }
+        }
+    }
+
+    private fun playSound(context: Context) {
+        val notificationUri = android.provider.Settings.System.DEFAULT_NOTIFICATION_URI
+        val ringtone = android.media.RingtoneManager.getRingtone(context, notificationUri)
+        ringtone?.play()
     }
 
     private fun canChangeRingerMode(context: Context, mode: Int): Boolean {
         // For silent mode on Android 6+, we need Do Not Disturb permission
-        if (mode == AudioManager.RINGER_MODE_SILENT &&
-            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+        if (mode == AudioManager.RINGER_MODE_SILENT
+        ) {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE)
                 as android.app.NotificationManager
             return notificationManager.isNotificationPolicyAccessGranted
@@ -119,6 +157,6 @@ class RingerWidgetProvider : AppWidgetProvider() {
 
     private fun saveCurrentMode(context: Context, mode: Int) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putInt(PREF_CURRENT_MODE, mode).apply()
+        prefs.edit { putInt(PREF_CURRENT_MODE, mode) }
     }
 }
