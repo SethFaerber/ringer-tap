@@ -65,19 +65,22 @@ class RingerWidgetProvider : AppWidgetProvider() {
         // Get current ringer mode
         val currentMode = getCurrentRingerMode(context)
 
-        // Update icon and text based on current mode
+        // Update icon, text, and background color based on current mode
         when (currentMode) {
             AudioManager.RINGER_MODE_NORMAL -> {
                 views.setImageViewResource(R.id.widget_icon, R.drawable.ic_ringer_normal)
                 views.setTextViewText(R.id.widget_text, context.getString(R.string.ringer_normal))
+                views.setInt(R.id.widget_root, "setBackgroundColor", androidx.core.content.ContextCompat.getColor(context, R.color.ringer_normal))
             }
             AudioManager.RINGER_MODE_VIBRATE -> {
                 views.setImageViewResource(R.id.widget_icon, R.drawable.ic_ringer_vibrate)
                 views.setTextViewText(R.id.widget_text, context.getString(R.string.ringer_vibrate))
+                views.setInt(R.id.widget_root, "setBackgroundColor", androidx.core.content.ContextCompat.getColor(context, R.color.ringer_vibrate))
             }
             AudioManager.RINGER_MODE_SILENT -> {
                 views.setImageViewResource(R.id.widget_icon, R.drawable.ic_ringer_silent)
                 views.setTextViewText(R.id.widget_text, context.getString(R.string.ringer_silent))
+                views.setInt(R.id.widget_root, "setBackgroundColor", androidx.core.content.ContextCompat.getColor(context, android.R.color.black))
             }
         }
 
